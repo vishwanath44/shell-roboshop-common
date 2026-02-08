@@ -10,10 +10,11 @@ N="\e[0m"
 SCRIPT_DIR=$PWD
 START_TIME=$(date +%s)
 MONGODB_HOST=mongodb.vishwa88s.online
+MYSQL_HOST=mysql.vishwa88s.online
 
 mkdir -p $LOGS_FOLDER
 
-echo "$(date "+%Y-%M-%d %H:%M:%S") | Script started executig at: $(Date)" | tee -a $LOGS_FILE
+echo "$(date "+%Y-%m-%d %H:%M:%S") | Script started executing at: $(date)" | tee -a $LOGS_FILE
 
 check_root(){
     if [ $USERID -ne 0 ]; then
@@ -24,14 +25,14 @@ check_root(){
 
 VALIDATE(){
     if [ $1 -ne 0 ]; then
-        echo -e "$(date "+%Y-%M-%d %H:%M:%S") | $2 ... $R FAILURE $N" | tee -a $LOGS_FILE
+        echo -e "$(date "+%Y-%m-%d %H:%M:%S") | $2 ... $R FAILURE $N" | tee -a $LOGS_FILE
         exit 1
     else
-        echo -e "$(date "+%Y-%M-%d %H:%M:%S") | $2 ... $G SUCCESS $N" | tee -a $LOGS_FILE
+        echo -e "$(date "+%Y-%m-%d %H:%M:%S") | $2 ... $G SUCCESS $N" | tee -a $LOGS_FILE
     fi
 }
 
-node.js_setup(){
+nodejs_setup(){
     dnf module disable nodejs -y &>>$LOGS_FILE
     VALIDATE $? "Disabling NodeJS Default version"
 
@@ -67,7 +68,7 @@ python_setup(){
 }
 
 app_setup(){
-    # creating system user 
+    # creating system user
     id roboshop &>>$LOGS_FILE
     if [ $? -ne 0 ]; then
         useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOGS_FILE
@@ -76,11 +77,11 @@ app_setup(){
         echo -e "Roboshop user already exist ... $Y SKIPPING $N"
     fi
 
-    # downloading the app 
+    # downloading the app
     mkdir -p /app 
     VALIDATE $? "Creating app directory"
 
-    curl -o /tmp/$app_name.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip  &>>$LOGS_FILE
+    curl -o /tmp/$app_name.zip https://roboshop-artifacts.s3.amazonaws.com/$app_name-v3.zip  &>>$LOGS_FILE
     VALIDATE $? "Downloading $app_name code"
 
     cd /app
@@ -93,7 +94,7 @@ app_setup(){
     VALIDATE $? "Uzip $app_name code"
 }
 
-systemd_steup(){
+systemd_setup(){
     cp $SCRIPT_DIR/$app_name.service /etc/systemd/system/$app_name.service
     VALIDATE $? "Created systemctl service"
 
@@ -107,8 +108,9 @@ app_restart(){
     systemctl restart $app_name
     VALIDATE $? "Restarting $app_name"
 }
+
 print_total_time(){
     END_TIME=$(date +%s)
     TOTAL_TIME=$(( $END_TIME - $START_TIME ))
-    echo -e "$(date "+%Y-%M-%d %H:%M:%S") | Script execute in : $G $TOTAL_TIME seconds $N" | tee -a $LOGS_FILE
+    echo -e "$(date "+%Y-%m-%d %H:%M:%S") | Script execute in: $G $TOTAL_TIME seconds $N" | tee -a $LOGS_FILE
 }
